@@ -48,7 +48,7 @@
             Please confirm your password.
           </small>
         </div>
-    </div>
+      </div>
       <button type="submit" class="btn btn-primary">Sign Up</button>
     </form>
   </div>
@@ -97,10 +97,10 @@ export default {
         this.signingUp = true;
         fetch(SIGNUP_URL, {
           method: 'POST',
-          body: JSON.stringify(body),
           headers: {
             'content-type': 'application/json',
           },
+          body: JSON.stringify(body),
         }).then((response) => {
           if (response.ok) {
             return response.json();
