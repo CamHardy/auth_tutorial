@@ -1,15 +1,15 @@
 <template>
   <div>
     <h1>Login</h1>
-    <div>
-      <img v-if="signingUp" src="../assets/loading.svg"/>
+    <div v-if="loggingIn">
+      <img src="../assets/loading.svg"/>
     </div>
     <div v-if="errorMessage" class="alert alert-dismissible alert-danger">
       {{ errorMessage }}
     </div>
-    <form v-if="!logginIn" @submit.prevent="login()">
+    <form v-if="!loggingIn" @submit.prevent="login()">
       <div class="form-group">
-        <label for="Username">Username</label>
+        <label for="username">Username</label>
         <input
           v-model="user.username"
           type="text"
@@ -22,7 +22,7 @@
         </small>
       </div>
       <div class="form-group">
-        <label for="Password">Password</label>
+        <label for="password">Password</label>
         <input
           v-model="user.password"
           type="password"
@@ -42,27 +42,29 @@
 <script>
 import Joi from 'joi';
 
-const LOGIN_URL = 'https://localhost:5000/auth/login';
+const LOGIN_URL = 'http://localhost:5000/auth/login';
 
 const schema = Joi.object().keys({
-  username: Joi.string().regex(/(^[a-zA-Z0-9_]+$)/).min(1).max(30).required(),
+  username: Joi.string().regex(/(^[a-zA-Z0-9_]+$)/).min(1).max(30)
+    .required(),
   password: Joi.string().trim().min(8).required(),
 });
 
 export default {
   data: () => ({
-    logginIn: false,
+    loggingIn: false,
     errorMessage: '',
     user: {
       username: '',
       password: '',
-    }
+    },
   }),
   methods: {
     login() {
       this.errorMessage = '';
 
       if (this.validUser()) {
+        this.loggingIn = true;
         const body = {
           username: this.user.username,
           password: this.user.password,
@@ -71,7 +73,7 @@ export default {
         fetch(LOGIN_URL, {
           method: 'POST',
           headers: {
-            'content-type': application/json,
+            'content-type': 'application/json',
           },
           body: JSON.stringify(body),
         }).then((response) => {
@@ -81,7 +83,8 @@ export default {
           return response.json().then((error) => {
             throw new Error(error.message);
           });
-        }).then(() => {
+        }).then((result) => {
+          localStorage.token = result.token;
           setTimeout(() => {
             this.loggingIn = false;
             this.$router.push('/dashboard');
@@ -103,12 +106,12 @@ export default {
       if (result.error.message.includes('username')) {
         this.errorMessage = 'Username is invalid.';
       } else {
-        this.errorMessage = 'Password is invalid.'
+        this.errorMessage = 'Password is invalid.';
       }
 
       return false;
-    }
-  }
+    },
+  },
 };
 </script>
 

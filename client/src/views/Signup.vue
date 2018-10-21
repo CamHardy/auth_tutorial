@@ -1,15 +1,15 @@
 <template>
   <div>
     <h1>Signup</h1>
-    <div>
-      <img v-if="signingUp" src="../assets/loading.svg"/>
+    <div v-if="signingUp">
+      <img src="../assets/loading.svg"/>
     </div>
     <div v-if="errorMessage" class="alert alert-dismissible alert-danger">
       {{ errorMessage }}
     </div>
     <form v-if="!signingUp" @submit.prevent="signup">
       <div class="form-group">
-        <label for="Username">Username</label>
+        <label for="username">Username</label>
         <input
           v-model="user.username"
           type="text"
@@ -23,7 +23,7 @@
       </div>
       <div class="form-row">
         <div class="form-group col-md-6">
-          <label for="Password">Password</label>
+          <label for="password">Password</label>
           <input
             v-model="user.password"
             type="password"
@@ -108,10 +108,11 @@ export default {
           return response.json().then((error) => {
             throw new Error(error.message);
           });
-        }).then(() => {
+        }).then((result) => {
+          localStorage.token = result.token;
           setTimeout(() => {
             this.signingUp = false;
-            this.$router.push('/login');
+            this.$router.push('/dashboard');
           }, 1000);
         }).catch((error) => {
           setTimeout(() => {

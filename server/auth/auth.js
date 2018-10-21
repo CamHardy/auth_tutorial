@@ -1,5 +1,7 @@
+'use strict';
+
 const express = require('express');
-const joi = require('joi');
+const Joi = require('joi');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -9,10 +11,29 @@ users.createIndex('username', {unique: true});
 
 const router = express.Router();
 
-const schema = joi.object().keys({
-	username: joi.string().regex(/(^[a-zA-Z0-9_]+$)/).min(1).max(30).required(),
-	password: joi.string().trim().min(8).required()
+const schema = Joi.object().keys({
+	username: Joi.string().regex(/(^[a-zA-Z0-9_]+$)/).min(1).max(30).required(),
+	password: Joi.string().trim().min(8).required()
 });
+
+function createTokenSendResponse(user, res, next) {
+	const payload = {
+		_id: user._id,
+		username: user.username
+	};
+
+	jwt.sign(
+		payload, 
+		process.env.TOKEN_SECRET, 
+		{expiresIn: '1d'}, 
+		(err, token) => {
+			if (err) {
+				respondError422(res, next);
+			} else {
+				res.json({token});
+			}
+		});
+}
 
 router.get('/', (req, res) => {
 	res.json({
@@ -21,7 +42,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/signup', (req, res, next) => {
-	const result = joi.validate(req.body, schema);
+	const result = Joi.validate(req.body, schema);
 	if (result.error === null) {
 		// input is valid
 		// make sure input is unique
@@ -35,7 +56,7 @@ router.post('/signup', (req, res, next) => {
 				next(new Error('User already exists'));
 			} else {
 				// hash the pssword and insert the user into the db
-				bcrypt.hash(req.body.password, 8).then(hashedPass => {
+				bcrypt.hash(req.body.password.trim(), 8).then(hashedPass => {
 					const newUser = {
 						username: req.body.username,
 						password: hashedPass
@@ -43,8 +64,7 @@ router.post('/signup', (req, res, next) => {
 
 					// insert the user into the db
 					users.insert(newUser).then(insertedUser => {
-						delete insertedUser.password;
-						res.json(insertedUser);
+						createTokenSendResponse(insertedUser, res, next);
 					});
 				});
 			}
@@ -66,22 +86,7 @@ router.post('/login', (req, res, next) => {
 				bcrypt.compare(req.body.password, user.password)
 				.then(result => {
 					if (result) {
-						// password is correct!
-						const payload = {
-							_id: user._id,
-							username: user.username
-						};
-						jwt.sign(
-							payload, 
-							process.env.TOKEN_SECRET, 
-							{expiresIn: '1d'}, 
-							(err, token) => {
-								if (err) {
-									respondError422(res, next);
-								} else {
-									res.json({token});
-								}
-							});
+						createTokenSendResponse(user, res, next);
 					} else {
 						respondError422(res, next);
 					}
