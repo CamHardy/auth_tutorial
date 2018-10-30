@@ -41,11 +41,10 @@ export default new Router({
       beforeEnter: (to, from, next) => {
         if (localStorage.token) {
           next();
-        }
-        else {
+        } else {
           next('/login');
         }
-      }
-    }
+      },
+    },
   ],
 });

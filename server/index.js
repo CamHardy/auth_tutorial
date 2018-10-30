@@ -7,15 +7,19 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+
+const middleware = require('./auth/middleware.js');
 const auth = require('./auth/auth.js');
+const notes = require('./api/notes.js');
 
 const port = process.env.PORT || 5000;
 
 app.use(volleyball);
 app.use(cors({
-	origin: 'http://localhost:8080'
+	origin: 'http://localhost:8082'
 }));
 app.use(express.json());
+app.use(middleware.checkTokenSetUser);
 
 app.get('/', (req, res) => {
 	res.json({
@@ -25,6 +29,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/auth', auth);
+app.use('/api/v1/notes', middleware.isLoggedIn, notes);
 app.use(notFound);
 app.use(errorHandler);
 
